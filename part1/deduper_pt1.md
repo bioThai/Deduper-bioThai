@@ -21,7 +21,7 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
 - Create string variable to hold name of sorted version of input SAM file (eg, sorted_input.sam)
 - Create string variable to hold name of deduplicated output SAM file (eg, input_deduped.sam)
 - Create temp_read dictionary to temporarily hold one sam file line
-    - # key: tuple containing read_umi, chromosome_name, starting_position
+    - # key: tuple containing read_umi, bit16_flag (true or false) chromosome_name, starting_position
     - # value: list containing bitflag and rest of the values in the line
 - Create a list to hold correct UMIs
 
@@ -52,30 +52,31 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
                     - Use regex to extract how many basepairs were soft-clipped, and save this in a variable called bps_clipped
                     - starting_position = starting_position - bps_clipped
                 
-                - Create tuple containing read_umi, chromosome_name, starting_position, and assign it to "key" variable
+                - Check if bit 16 in bitflag is in "true" (1) or "false" (0) state:
+                    - If bit 16 is true:
+                        assign "true" to bit16_flag variable.
+                    - Else:
+                        assign "false" to bit16_flag.
+
+                - Create tuple containing read_umi, bit16_flag, chromosome_name, starting_position, and assign it to "key" variable. 
+                    - Note: If bitwise flag of one read and bitwise flag of another read have the same bit-16 flag states (either BOTH have bit16_flag == TRUE, or BOTH have bit16_flag == FALSE), then they both have the same strandedness and possibly could be duplicates.
+
                 - If temp_read dictionary is empty:
-                    - temp_read[key] = list(bitflag) + line_tokens[4:]
+                    - Assign chromosome_name to current_chrom_in_dict variable (holds value of which chromosome's non-duplicate reads are currently being stored in temp_reads dictionary).
+
+                - If key is in temp_read dictionary (current read is a pcr duplicate):
+                    - continue to next iteration in for loop, read next line in sorted_input file
                 - Else:
-                    - If key is in temp_read dictionary:
-
-                        Work on this more to develpoe dict that truly hold unique, non-duplicate read
-                        - If bitflag of current read and bitflag of temp_read[key] (stored in temp_read[key][0])
-                        
-                        
-                        next read have the same bit-16 flag states (either BOTH have bit 16 flipped, or BOTH don't have bit 16 flipped)
-
-                
-                    - at some point, check if bitwise flag of one read and bitwise flag of next read have the same bit-16 flag states (either BOTH have bit 16 flipped, or BOTH don't have bit 16 flipped):
-                        - if they have the same bit-16 flag state, then they both have the same strandedness and possibly could be duplicates 
-                
-                - 
-            
-
+                    - If chromosome_name == current_chrom_in_dict:
+                        - add read to dict (temp_read[key] = list(bitflag) + line_tokens[4:])
+                    - Else: 
+                        - For key in temp_read dict:
+                            - Pop the corresponding value out of dict and save it in an output_list variable (output_list = pop(key))
+                                - Iterate through the key tuple and output_list in such a way that you write each item in proper order into output sam file (input_deduped.sam), with each item in read separated by tab.
+                          
             - Else:
-                - continue, read next line in sorted_input file
+                - continue to next iteration in for loop, read next line in sorted_input file
             
-
-        
 ```
 
 
