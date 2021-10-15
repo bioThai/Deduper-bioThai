@@ -13,70 +13,70 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
 
 - Develop your algorithm using pseudocode:
 
-> ```
-    - conda activate bgmp_py39 in the wrapper for Python script
-    - Import modules including pysam (the python equivalent of command line samtools).
+```
+- conda activate bgmp_py39 in the wrapper for Python script
+- Import modules including pysam (the python equivalent of command line samtools).
 
-    - Get argparse inputs (filenames, etc.) and save them into variables.
-    - Create string variable to hold name of sorted version of input SAM file (eg, sorted_input.sam)
-    - Create string variable to hold name of deduplicated output SAM file (eg, input_deduped.sam)
-    - Create temp_read dictionary to temporarily hold one sam file line
-        - # key: tuple containing read_umi, chromosome_name, starting_position
-        - # value: list containing bitflag and rest of the values in the line
-    - Create a list to hold correct UMIs
+- Get argparse inputs (filenames, etc.) and save them into variables.
+- Create string variable to hold name of sorted version of input SAM file (eg, sorted_input.sam)
+- Create string variable to hold name of deduplicated output SAM file (eg, input_deduped.sam)
+- Create temp_read dictionary to temporarily hold one sam file line
+    - # key: tuple containing read_umi, chromosome_name, starting_position
+    - # value: list containing bitflag and rest of the values in the line
+- Create a list to hold correct UMIs
 
-    - With open correct_UMIs.txt in read mode:
-        - For line in file:
-            - strip "\n" from line
-            - Append line to correct_umis_list
+- With open correct_UMIs.txt in read mode:
+    - For line in file:
+        - strip "\n" from line
+        - Append line to correct_umis_list
 
-    - With open input.sam file in read mode:
-        - Use pysam's sort function to sort input.sam file by chromosome name and read position ("-M" option) and write the sorted output into another file called sorted_input.sam (-o option). This way, the chromosomes and read positions are in order, so any duplicate reads are closer together in the file, causing less intensive memory usage when parsing file.
+- With open input.sam file in read mode:
+    - Use pysam's sort function to sort input.sam file by chromosome name and read position ("-M" option) and write the sorted output into another file called sorted_input.sam (-o option). This way, the chromosomes and read positions are in order, so any duplicate reads are closer together in the file, causing less intensive memory usage when parsing file.
 
-    - With open sorted_input.sam in read mode, with open input_deduped.sam in write mode:
-        - For line in sorted_input filehandler:
-            - strip "\n" from line
-            - If line starts with "@" (line is a header line):
-                - write line to output file (input_deduped.sam)
-            - Else:  
-                - split line by whitespace, save resulting list of line tokens into a variable called line_tokens 
-                - save first line token into qname string variable
-                - save second line token into bitflag int variable
-                - save third line token into chromosome_name string variable
-                - save fourth line token into starting_position int variable
-                - save sixth line token into cigar_string variable
+- With open sorted_input.sam in read mode, with open input_deduped.sam in write mode:
+    - For line in sorted_input filehandler:
+        - strip "\n" from line
+        - If line starts with "@" (line is a header line):
+            - write line to output file (input_deduped.sam)
+        - Else:  
+            - split line by whitespace, save resulting list of line tokens into a variable called line_tokens 
+            - save first line token into qname string variable
+            - save second line token into bitflag int variable
+            - save third line token into chromosome_name string variable
+            - save fourth line token into starting_position int variable
+            - save sixth line token into cigar_string variable
 
-                - Split qname string by ":", and save last token into variable called read_umi
-                - If read_umi is in correct_umis_list:
-                    - If "S" is in cigar_string (soft clipping occurred):
-                        - Use regex to extract how many basepairs were soft-clipped, and save this in a variable called bps_clipped
-                        - starting_position = starting_position - bps_clipped
-                    
-                    - Create tuple containing read_umi, chromosome_name, starting_position, and assign it to "key" variable
-                    - If temp_read dictionary is empty:
-                        - temp_read[key] = list(bitflag) + line_tokens[4:]
-                    - Else:
-                        - If key is in temp_read dictionary:
-
-                            Work on this more to develpoe dict that truly hold unique, non-duplicate read
-                            - If bitflag of current read and bitflag of temp_read[key] (stored in temp_read[key][0])
-                            
-                            
-                            next read have the same bit-16 flag states (either BOTH have bit 16 flipped, or BOTH don't have bit 16 flipped)
-
-                    
-                        - at some point, check if bitwise flag of one read and bitwise flag of next read have the same bit-16 flag states (either BOTH have bit 16 flipped, or BOTH don't have bit 16 flipped):
-                            - if they have the same bit-16 flag state, then they both have the same strandedness and possibly could be duplicates 
-                    
-                    - 
+            - Split qname string by ":", and save last token into variable called read_umi
+            - If read_umi is in correct_umis_list:
+                - If "S" is in cigar_string (soft clipping occurred):
+                    - Use regex to extract how many basepairs were soft-clipped, and save this in a variable called bps_clipped
+                    - starting_position = starting_position - bps_clipped
                 
-
+                - Create tuple containing read_umi, chromosome_name, starting_position, and assign it to "key" variable
+                - If temp_read dictionary is empty:
+                    - temp_read[key] = list(bitflag) + line_tokens[4:]
                 - Else:
-                    - continue, read next line in sorted_input file
-                
+                    - If key is in temp_read dictionary:
 
+                        Work on this more to develpoe dict that truly hold unique, non-duplicate read
+                        - If bitflag of current read and bitflag of temp_read[key] (stored in temp_read[key][0])
+                        
+                        
+                        next read have the same bit-16 flag states (either BOTH have bit 16 flipped, or BOTH don't have bit 16 flipped)
+
+                
+                    - at some point, check if bitwise flag of one read and bitwise flag of next read have the same bit-16 flag states (either BOTH have bit 16 flipped, or BOTH don't have bit 16 flipped):
+                        - if they have the same bit-16 flag state, then they both have the same strandedness and possibly could be duplicates 
+                
+                - 
             
-    ```
+
+            - Else:
+                - continue, read next line in sorted_input file
+            
+
+        
+```
 
 
 - Determine high level functions:
