@@ -13,7 +13,7 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
 
 - Develop your algorithm using pseudocode:
 
-```
+> ```
 - conda activate bgmp_py39 in the wrapper for Python script
 - Import modules including pysam (the python equivalent of command line samtools).
 
