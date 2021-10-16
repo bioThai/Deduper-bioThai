@@ -14,15 +14,15 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
 - Develop your algorithm using pseudocode:
 
 ```
-- conda activate bgmp_py39 in the wrapper for Python script
-- Import modules including pysam (the python equivalent of command line samtools).
+- Import modules, including pysam (the python equivalent of command line samtools).
 
 - Get argparse inputs (filenames, etc.) and save them into variables.
+
 - Create string variable to hold name of sorted version of input SAM file (eg, sorted_input.sam)
 - Create string variable to hold name of deduplicated output SAM file (eg, input_deduped.sam)
-- Create temp_read dictionary to temporarily hold one sam file line
-    - # key: tuple containing read_umi, bit16_flag (true or false) chromosome_name, starting_position
-    - # value: list containing bitflag and rest of the values in the line
+- Create temp_read dictionary to temporarily hold all non-duplicated reads from a specific chromosome
+    - # key: tuple containing read_umi, bit16_flag (true or false), chromosome_name, starting_position
+    - # value: list containing all items from line read from SAM file
 - Create a list to hold correct UMIs
 
 - With open correct_UMIs.txt in read mode:
@@ -31,7 +31,8 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
         - Append line to correct_umis_list
 
 - With open input.sam file in read mode:
-    - Use pysam's sort function to sort input.sam file by chromosome name and read position ("-M" option) and write the sorted output into another file called sorted_input.sam (-o option). This way, the chromosomes and read positions are in order, so any duplicate reads are closer together in the file, causing less intensive memory usage when parsing file.
+    - Use pysam's sort function to sort input.sam file by chromosome name and read position ("-M" option), and write the sorted output into another file called sorted_input.sam (-o option). 
+    - This way, the chromosomes and read positions are in order, so any duplicate reads are closer together in the file, causing less intensive memory usage when parsing file.
 
 - With open sorted_input.sam in read mode, with open input_deduped.sam in write mode:
     - For line in sorted_input filehandler:
@@ -50,15 +51,16 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
             - If read_umi is in correct_umis_list:
                 - If "S" is in cigar_string (soft clipping occurred):
                     - Use regex to extract how many basepairs were soft-clipped, and save this in a variable called bps_clipped
-                    - starting_position = starting_position - bps_clipped
-                
+                    - adjusted_starting_position = starting_position - bps_clipped
+                - Else:
+                    - adjusted_starting_position = starting_position
                 - Check if bit 16 in bitflag is in "true" (1) or "false" (0) state:
                     - If bit 16 is true:
                         assign "true" to bit16_flag variable.
                     - Else:
                         assign "false" to bit16_flag.
 
-                - Create tuple containing read_umi, bit16_flag, chromosome_name, starting_position, and assign it to "key" variable. 
+                - Create tuple containing read_umi, bit16_flag, chromosome_name, adjusted_starting_position, and assign it to "key" variable. 
                     - Note: If bitwise flag of one read and bitwise flag of another read have the same bit-16 flag states (either BOTH have bit16_flag == TRUE, or BOTH have bit16_flag == FALSE), then they both have the same strandedness and possibly could be duplicates.
 
                 - If temp_read dictionary is empty:
@@ -68,17 +70,16 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
                     - continue to next iteration in for loop, read next line in sorted_input file
                 - Else:
                     - If chromosome_name == current_chrom_in_dict:
-                        - add read to dict (temp_read[key] = list(bitflag) + line_tokens[4:])
+                        - add read to dict (temp_read[key] = line_tokens)
                     - Else: 
                         - For key in temp_read dict:
-                            - Pop the corresponding value out of dict and save it in an output_list variable (output_list = pop(key))
-                                - Iterate through the key tuple and output_list in such a way that you write each item in proper order into output sam file (input_deduped.sam), with each item in read separated by tab.
-                          
+                            - Pop the corresponding value (a list) out of dict and save it in an output_line_tokens list variable (output_line_tokens = pop(key))
+                                - Join all values in output_line_tokens list into a single string, using a "\t" as delimiter. Assign this string to a variable.
+                                - Write this string into the output sam file (input_deduped.sam).          
             - Else:
                 - continue to next iteration in for loop, read next line in sorted_input file
-            
-```
 
+```
 
 - Determine high level functions:
     - Description
@@ -96,13 +97,18 @@ def main():
 def get_args():
     '''Defines/sets possible command line arguments for script'''
     parser = argparse.ArgumentParser("A program to parse SAM file and filter out reads that are PCR duplicates or that have UMIs which don't match a given list of possible UMIs")
-    parser.add_argument("-f", nargs="+", help="specifies input SAM filename", type=str, required=True)
-    parser.add_argument("-u", nargs="+", help="specifies input text file containing all possible UMIs", type=str, required=True)
+    parser.add_argument("-f", nargs="+", help="specifies input SAM filename(s)", type=str, required=True)
+    parser.add_argument("-u", nargs="+", help="specifies input text file(s) containing all possible UMIs", type=str, required=True)
     return parser.parse_args()
 
-def is_valid_umi(str: umi_read) -> boolean:
-    '''Checks if a given UMI is valid (error-free) by seeing if it matches any UMIs in a given dictionary '''
+def get_adjusted_start_pos(sam_start_pos: int, cigar_string: str) -> int:
+    '''Takes a read start position and checks if corresponding cigar string has "S" in it(indicating soft clipping). If cigar string has S, then use regular expressions to extract the number of base pairs that were soft-clipped, and subtract this from the original start position value. Returns the adjusted start position value.'''
 
+    Returns the adjusted start position value as integer
+    
+    # Examples:
+    # get_adjusted_start_pos(100, 3S14M) returns 97
+    # get_adjusted_start_pos(100, 14M20N30M) returns 100
 
 ```
 
