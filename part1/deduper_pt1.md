@@ -74,10 +74,18 @@ Write up a strategy for writing a Reference Based PCR Duplicate Removal tool. Th
                     - Else: 
                         - For key in temp_read dict:
                             - Pop the corresponding value (a list) out of dict and save it in an output_line_tokens list variable (output_line_tokens = pop(key))
-                                - Join all values in output_line_tokens list into a single string, using a "\t" as delimiter. Assign this string to a variable.
-                                - Write this string into the output sam file (input_deduped.sam).          
+                            - Join all values in output_line_tokens list into a single string, using a "\t" as delimiter. Assign this string to a variable.
+                            - Write this string into the output sam file (input_deduped.sam).      
+                        - add read (first read from new chromosome) to dict (temp_read[key] = line_tokens)
+                        - assign chromosome_name to current_chrom_in_dict variable
             - Else:
                 - continue to next iteration in for loop, read next line in sorted_input file
+
+    - Once all the non-duplicated reads from the last chromosome have been saved into temp_read dict, write these reads into output file:
+        - For key in temp_read dict:
+            - Pop the corresponding value (a list) out of dict and save it in an output_line_tokens list variable (output_line_tokens = pop(key))
+            - Join all values in output_line_tokens list into a single string, using a "\t" as delimiter. Assign this string to a variable.
+            - Write this string into the output sam file (input_deduped.sam).
 
 ```
 
