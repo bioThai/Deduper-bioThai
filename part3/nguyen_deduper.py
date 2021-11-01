@@ -44,7 +44,7 @@ def get_adjusted_start_pos(sam_start_pos: int, cigar_string: str, is_pos_strand:
     cigar_search_dict: dict = {"M": 0, "D": 0, "S": 0, "N": 0}
         #holds number of bases with Ms (matches or mismatches), Ds (deletions), right-most Ss (right-most soft-clipped bases), and Ns (intron sequences, which are present in reference genome but not in the RNA-seq reads) from cigar string
         #key: "M", "D", "S", "N" (Ms, Ds, right-most Ss, and Ns affect the "true" start position of a negative strand)
-        #value: total number of bases that are matches/mismatches, insertions, or soft-clipped
+        #value: total number of bases
     temp_num: int = 0
 
     if is_pos_strand == True:
