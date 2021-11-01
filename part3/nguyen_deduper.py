@@ -57,9 +57,9 @@ def get_adjusted_start_pos(sam_start_pos: int, cigar_string: str, is_pos_strand:
             adjusted_start_pos = sam_start_pos
     #else if sequencing read currently being read is from a negative strand
     else:
-        # use regex to find number of Ms, Ds, Ss, and Ns from cigar string
+        # use regex with f-string to find number of Ms, Ds, Ss, and Ns from cigar string
         for letter in cigar_search_dict:
-            search_results_list = re.findall("([0-9]*)({letter})", cigar_string)
+            search_results_list = re.findall(f"([0-9]*)({letter})", cigar_string)
             if len(search_results_list) != 0:
                 temp_num = 0
                 for regex_match in search_results_list:
