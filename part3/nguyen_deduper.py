@@ -103,8 +103,11 @@ def dedup_sam(input_sam_file: str, umi_list: list, is_paired_end: bool):
     output_read: str = ""
     num_header_lines: int = 0           #holds count of number of header lines in input SAM file
     num_umi_error_reads: int = 0
-    num_unique_reads: int = 0
     num_duplicate_reads: int = 0
+    num_unique_reads_dict: dict = {}
+        #holds the number of unique, non-duplicate reads for each chromosome/contig
+        #key: chromosome/contig name
+        #value: number of unique reads
 
     with open(input_sam_file, "r") as input_sam_fh, open(output_sam_file, "w") as output_sam_fh:
         for line in input_sam_fh:
@@ -136,15 +139,16 @@ def dedup_sam(input_sam_file: str, umi_list: list, is_paired_end: bool):
 
                     if len(temp_reads_dict) == 0:
                         current_chrom_in_dict = chrom_name
+                        num_unique_reads_dict[current_chrom_in_dict] = 0
 
                     #if current read is a PCR duplicate
                     if key in temp_reads_dict:
                         num_duplicate_reads += 1
                         continue
                     else:
-                        num_unique_reads += 1
                         if chrom_name == current_chrom_in_dict:
                             temp_reads_dict[key] = line_tokens
+                            num_unique_reads_dict[current_chrom_in_dict] += 1
                         else:
                             for non_duplicated_read_key in temp_reads_dict:
                                 #Get the corresponding value (a list) out of dict and save it in output_line_tokens
@@ -157,6 +161,9 @@ def dedup_sam(input_sam_file: str, umi_list: list, is_paired_end: bool):
                             #add current read (first read from new chromosome) to dict
                             temp_reads_dict[key] = line_tokens
                             current_chrom_in_dict = chrom_name
+                            #need to initialize new entry in unique reads dict with value of 0 for new chromosome encountered
+                            num_unique_reads_dict[current_chrom_in_dict] = 0
+                            num_unique_reads_dict[current_chrom_in_dict] += 1
 
         #Once all the non-duplicated reads from the last chromosome have been saved into temp_reads dict, write these last reads into output file:
         for non_duplicated_read_key in temp_reads_dict:
@@ -171,8 +178,11 @@ def dedup_sam(input_sam_file: str, umi_list: list, is_paired_end: bool):
     print("Output file:", output_sam_file)
     print("Number of header lines:", num_header_lines)
     print("Number of reads with UMI errors:", num_umi_error_reads)
-    print("Number of unique reads:", num_unique_reads)
     print("Number of duplicate reads:", num_duplicate_reads)
+    print("Number of unique reads (total):", sum(num_unique_reads_dict.values()))
+    print("\nNumber of unique reads (by chromosome/contig):")
+    for chromosome in sorted(num_unique_reads_dict.keys()):
+        print(chromosome, num_unique_reads_dict[chromosome], sep="\t")
 
 
 def main():
