@@ -2,7 +2,12 @@
 
 ## Reference Based PCR Duplicate Removal Tool
 
-The deduplicator script in this repository takes in SAM files of single-end RNA-seq reads and a text file of unique molecular identifiers (UMIs) to be used as a reference. 
+The deduplicator (deduper) Python script in this repository takes in SAM files of single-end RNA-seq reads and a text file of unique molecular identifiers (UMIs) to be used as a reference. The deduper script outputs summary statistics about the output deduped SAM file, such as:
+- Number of header lines
+- Number of reads with UMI errors (eg, UMIs not matching the ones in the given UMI file)
+- Number of duplicate reads removed
+- Number of unique reads (total)
+- Number of unique reads (by chromosome/contig)
 
 Additional features currently under construction:
 - Paired-end functionality
@@ -21,3 +26,5 @@ To deduplicate a SAM file using SLURM on an HPC cluster:
 2. Run the `deduper_wrapper.sh` script as a SLURM batch job using the following command:
 
     `sbatch deduper_wrapper.sh`
+
+__Note:__ Multiple SAM files can be deduplicated in a single run if each file is sorted via Samtools. This can be done by modifying the `deduper_wrapper.sh` script to include extra lines/commands for each file to be sorted. Then, all of these sorted SAM files can be inputted as arguments (with a space between each file name) into the Python script.
