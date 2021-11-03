@@ -2,7 +2,7 @@
 
 ## Reference Based PCR Duplicate Removal Tool
 
-The deduplicator (deduper) Python script in this repository takes in SAM files of single-end RNA-seq reads and a text file of unique molecular identifiers (UMIs) to be used as a reference. The deduper script outputs summary statistics about the output deduped SAM file, such as:
+The deduplicator (deduper) Python script in this repository takes in SAM files of single-end RNA-seq reads and a text file of unique molecular identifiers (UMIs) to be used as a reference. The deduper script outputs a deduped SAM file and summary statistics about the output deduped SAM file, such as:
 - Number of header lines
 - Number of reads with UMI errors (eg, UMIs not matching the ones in the given UMI file)
 - Number of duplicate reads removed
