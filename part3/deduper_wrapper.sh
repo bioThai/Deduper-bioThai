@@ -4,8 +4,8 @@
 #SBATCH --partition=bgmp
 #SBATCH --cpus-per-task=4
 #SBATCH --time=10:00:00
-#SBATCH --output=nguyen_deduper_wrapper_%j.out
-#SBATCH --error=nguyen_deduper_wrapper_%j.err
+#SBATCH --output=deduper_wrapper_%j.out
+#SBATCH --error=deduper_wrapper_%j.err
 
 conda activate bgmp_py39
 
