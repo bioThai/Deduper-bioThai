@@ -7,10 +7,8 @@ def get_args():
     parser = argparse.ArgumentParser("A program to parse SAM file and filter out reads that are PCR duplicates or that have UMIs which don't match a given list of possible UMIs.")
     parser.add_argument("-f", "--file", nargs="+", help="Specifies input SAM filename(s). SAM files must be unzipped and must already be sorted by chromosome name (RNAME) and 1-based leftmost mapping position (POS).", type=str, required=True)
     parser.add_argument("-p", "--paired", help="Specifies if input SAM file holds paired-end alignment data. If paired-end, then specify the Boolean value 'true' (without quotations) as argument when calling this script. If not paired-end, do not include -p option.", type=bool)
-    parser.add_argument("-u", "--umi", help="Specify the text file(s) containing the list of UMIs to compare input SAM file UMIs to. Each UMI must be on a different line and not be delimited by any characters. If this option is unset/unspecified, then randomers will be used for UMIs instead of an UMI text file.", type=str)
-    
-    #print error messages?
-    #parser.add_argument("-h", "--help", help="")
+    parser.add_argument("-u", "--umi", help="Specify the text file containing the list of UMIs to compare input SAM file UMIs to. Each UMI must be on a different line and not be delimited by any characters.", type=str, required=True)
+    #--help argument is included by default, so is not specified here
     return parser.parse_args()
 
 def get_umi_list(umi_file: str) -> list:
@@ -50,35 +48,33 @@ def get_adjusted_start_pos(sam_start_pos: int, cigar_string: str, is_pos_strand:
     if is_pos_strand == True:
         # extract number of basepairs soft-clipped from beginning of read position
         left_clipped_search_results_list = re.findall("^([0-9]*)(S)", cigar_string)
-        if len(left_clipped_search_results_list) != 0:
+        if len(left_clipped_search_results_list) > 0:
             left_clipped = int(left_clipped_search_results_list[0][0])
             adjusted_start_pos = sam_start_pos - left_clipped
         else:
             adjusted_start_pos = sam_start_pos
     #else if sequencing read currently being read is from a negative strand
     else:
-        # use regex with f-string to find number of Ms, Ds, Ss, and Ns from cigar string
         for letter in cigar_search_dict:
-            search_results_list = re.findall(f"([0-9]*)({letter})", cigar_string)
-            if len(search_results_list) != 0:
+            if letter == "S":
+                # extract number of basepairs soft-clipped from right-most end of read
+                search_results_list = re.findall("([0-9]*)(S)$", cigar_string)
+            else:
+                # use regex with f-string to find number of Ms, Ds, and Ns from cigar string
+                search_results_list = re.findall(f"([0-9]*)({letter})", cigar_string)
+
+            if len(search_results_list) > 0:
                 temp_num = 0
                 for regex_match in search_results_list:
                     temp_num += int(regex_match[0])
                 cigar_search_dict[letter] = temp_num
-                if letter == "S":
-                    # if read is from negative strand, then leftmost soft-clipping doesn't affect true read start position, 
-                    # so you only want the right-most soft-clipping (total soft clippng - left-sided soft clipping)
-                    left_clipped_search_results_list = re.findall("^([0-9]*)(S)", cigar_string)
-                    if len(left_clipped_search_results_list) != 0:
-                        left_clipped = int(left_clipped_search_results_list[0][0])
-                        cigar_search_dict[letter] = temp_num - left_clipped
             else:
                 cigar_search_dict[letter] = 0
-        adjusted_start_pos = sam_start_pos + sum(cigar_search_dict.values()) - 1
         
+        adjusted_start_pos = sam_start_pos + sum(cigar_search_dict.values()) - 1
+    
     return adjusted_start_pos
     
-
 def dedup_sam(input_sam_file: str, umi_list: list, is_paired_end: bool):
     '''Takes a reference list of valid UMIs and a sorted input SAM file, and deduplicates the SAM file.'''
     #local variables
@@ -96,7 +92,7 @@ def dedup_sam(input_sam_file: str, umi_list: list, is_paired_end: bool):
     sam_starting_pos: int = 0
     cigar_string: str = ""
     read_umi: str = ""
-    is_pos_strand: bool = True #if current read is from a positive strand (if false, read is from negative strand)
+    is_pos_strand: bool = True          #if current read is from a positive strand (if false, read is from negative strand)
     adjusted_start_pos: int = 0
     key: tuple = ()
     output_line_tokens: list = []
@@ -156,6 +152,7 @@ def dedup_sam(input_sam_file: str, umi_list: list, is_paired_end: bool):
                                 #Join all values in output_line_tokens list into a single string, using a "\t" as delimiter
                                 output_read = "\t".join(output_line_tokens)
                                 output_sam_fh.write(output_read + "\n")
+                            
                             #clear the temp reads dict before adding reads from new chromosome
                             temp_reads_dict.clear()
                             #add current read (first read from new chromosome) to dict
@@ -180,10 +177,10 @@ def dedup_sam(input_sam_file: str, umi_list: list, is_paired_end: bool):
     print("Number of reads with UMI errors:", num_umi_error_reads)
     print("Number of duplicate reads:", num_duplicate_reads)
     print("Number of unique reads (total):", sum(num_unique_reads_dict.values()))
-    print("\nNumber of unique reads (by chromosome/contig):")
+    print("Number of unique reads (by chromosome/contig):")
     for chromosome in sorted(num_unique_reads_dict.keys()):
         print(chromosome, num_unique_reads_dict[chromosome], sep="\t")
-
+    print("******************")
 
 def main():
     '''Main function, drives the order of execution for script'''
@@ -194,13 +191,18 @@ def main():
     is_paired_end: bool = args.paired
     umi_list: list = []
 
+    if is_paired_end == True:
+        print("Error: Paired-end deduplication function currently under construction. Please use single-end data.")
+        quit()
+
     #call function to read input_umi_file and save UMIs into list
     umi_list = get_umi_list(input_umi_file)
     #print(len(umi_list), umi_list)
     
+    #deuplicate input SAM files
     for input_sam_file in input_sam_file_list:
         dedup_sam(input_sam_file, umi_list, is_paired_end)
         
-
+        
 if __name__ == "__main__":
     main()
