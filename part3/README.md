@@ -27,4 +27,4 @@ To deduplicate a SAM file using SLURM on an HPC cluster:
 
     `sbatch deduper_wrapper.sh`
 
-__Note:__ Multiple SAM files can be deduplicated in a single run if each file is sorted via Samtools. This can be done by modifying the `deduper_wrapper.sh` script to include extra lines/commands for each file to be sorted. Then, all of these sorted SAM files can be inputted as arguments (with a space between each file name) into the Python script.
+__Note:__ Multiple SAM files can be deduplicated in a single run if each file is sorted via Samtools. This can be done by modifying the `deduper_wrapper.sh` script to include extra lines/commands for each file to be sorted. Then, all of these sorted SAM files can be inputted as arguments (with a space between each file name) for the Python script.
