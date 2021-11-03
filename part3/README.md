@@ -8,6 +8,8 @@ Additional features currently under construction:
 - Paired-end functionality
 - Ability to specify which PCR duplicate to keep based on quality score
 
+### How to Use
+
 To deduplicate a SAM file using SLURM on an HPC cluster:
 
 1. Specify the following in the `deduper_wrapper.sh` script:
